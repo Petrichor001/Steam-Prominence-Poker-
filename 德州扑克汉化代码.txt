@@ -1,0 +1,29 @@
+cd "D:\Steam\steamapps\common\Prominence Poker\Prominence\Content\UI\FONTS"
+
+# 1. 定义你的“中文母本”
+$sourceFont = "NotoSansSC-Regular.ufont"
+
+# 2. 获取文件夹下所有的 .ufont 文件（排除母本本身和备份文件）
+$allUfonts = Get-ChildItem *.ufont | Where-Object { 
+    $_.Name -ne $sourceFont -and $_.Name -notlike "*.bak" 
+}
+
+foreach ($file in $allUfonts) {
+    $targetName = $file.Name
+    $bakName = "$targetName.bak"
+
+    # 如果没有备份，说明是原始文件，进行备份
+    if (-not (Test-Path $bakName)) {
+        mv $targetName $bakName
+        Write-Host "[+] 备份并准备劫持: $targetName" -ForegroundColor Green
+    } else {
+        # 如果已有备份，删除当前可能损坏的旧链接
+        rm $targetName -ErrorAction SilentlyContinue
+        Write-Host "[!] 覆盖旧链接: $targetName" -ForegroundColor Yellow
+    }
+
+    # 建立硬链接：让游戏以为这是原字体，其实它读的是 NotoSansSC
+    cmd /c mklink /H "$targetName" "$sourceFont"
+}
+
+Write-Host "`n[***] 劫持任务完成！所有 UI 字体现在都具备中文显示能力。" -ForegroundColor Cyan
